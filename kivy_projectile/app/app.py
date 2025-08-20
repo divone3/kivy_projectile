@@ -40,8 +40,8 @@ class BaseApp(MDApp):
         # مسیر ریشه پروژه: از اپلیکیشن اصلی (نه کتابخونه)
         caller_file = Path(sys.modules[self.__class__.__module__].__file__).resolve()
         project_root = caller_file.parent.parent  # جایی که main.py یا application هست
-        core_path = project_root / "android" / "core"
-        
+        core_path = project_root / self.core_folder_name
+
         if str(core_path) not in sys.path:
             sys.path.insert(0, str(core_path))
 
