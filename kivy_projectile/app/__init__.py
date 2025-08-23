@@ -1,3 +1,4 @@
 from .app import BaseApp
-from .theme import BaseTheme, M3ThemableBehavior
+from .theme.theme import BaseTheme
+from .theme.behvaior import M3ThemableBehavior
 __all__ = [BaseApp, "BaseTheme", "M3ThemableBehavior"]
