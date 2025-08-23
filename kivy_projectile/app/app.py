@@ -6,7 +6,7 @@ from importlib import import_module
 
 from kivymd.app import MDApp
 from kivymd.uix.widget import MDWidget
-from . import BaseTheme
+from kivy_projectile.app import BaseTheme
 
 class BaseApp(MDApp):
     """
