@@ -1,13 +1,12 @@
 # library/app/app.py
 import os
 import sys
-import locale
 from pathlib import Path
 from importlib import import_module
 
 from kivymd.app import MDApp
 from kivymd.uix.widget import MDWidget
-from kivy.lang.builder import Builder
+from app import BaseTheme
 
 class BaseApp(MDApp):
     """
@@ -16,6 +15,7 @@ class BaseApp(MDApp):
     - BASE_DIR و base_url را از settings استخراج می‌کند
     - سپس کانتینر اصلی UI را بارگذاری می‌کند
     - در صورت عدم موفقیت، fallback یک MDWidget خالی نمایش داده می‌شود
+    - Theme Material3 (BaseTheme) ایجاد و در دسترس ویجت‌ها قرار می‌دهد
     """
 
     container_class_name = "AppContainer"  # نام کلاس کانتینر داخل container.py
@@ -30,14 +30,20 @@ class BaseApp(MDApp):
         self.settings_module = None
         self.dynamic_config = None
 
+        # ---------- Theme ----------
+        self.m3theme = BaseTheme(
+            source_primary="#6750A4",
+            source_secondary="#625B71",
+            source_tertiary="#7D5260",
+            source_error="#B3261E",
+            mode="light"
+        )
+
         self._load_settings()
         self.load_config()
 
+    # -----------------------------
     def _load_settings(self):
-        """
-        settings.py را در android/core می‌خواند و BASE_DIR و base_url را ست می‌کند
-        """
-        # مسیر ریشه پروژه: جایی که main.py است
         project_root = Path(__file__).resolve().parent.parent.parent  # library/app/ -> Project/
         core_path = project_root / "android" / "core"
 
@@ -53,24 +59,18 @@ class BaseApp(MDApp):
             print(f"settings.py not found in {core_path}")
             self.BASE_DIR = project_root
             self.base_url = None
+
+    # -----------------------------
     def build(self):
-        """
-        هنگام اجرای اپ:
-        - مسیر اجرای پروژه را بررسی می‌کنیم
-        - کانتینر موجود را ایمپورت و باز می‌کنیم
-        """
         container_cls = self._load_container_class()
         if container_cls:
             self.container = container_cls()
         else:
             self.container = MDWidget()
-
         return self.container
 
+    # -----------------------------
     def _load_container_class(self):
-        """
-        کانتینر را از ui/container.py بارگذاری می‌کند
-        """
         project_path = Path(self.BASE_DIR) if self.BASE_DIR else Path(os.getcwd())
         ui_path = project_path / self.ui_folder_name
 
@@ -89,10 +89,8 @@ class BaseApp(MDApp):
             print(f"Error loading container: {e}")
             return None
 
+    # -----------------------------
     def load_config(self):
-        """
-        بررسی وجود config.py در android/core:
-        """
         app_dir = Path(self.BASE_DIR) / self.core_folder_name
         config_path = app_dir / "config.py"
 
@@ -104,13 +102,20 @@ class BaseApp(MDApp):
                 self.dynamic_config = getattr(spec, "config", spec)
             except Exception as e:
                 print(f"Error loading config.py: {e}")
-
                 class AppConfig:
                     pass
-
                 self.dynamic_config = AppConfig()
         else:
             class AppConfig:
                 pass
-
             self.dynamic_config = AppConfig()
+
+    # -----------------------------
+    # متدهای کمکی برای Theme
+    def switch_theme_mode(self, mode: str):
+        """سوییچ بین light و dark"""
+        self.m3theme.switch_mode(mode)
+
+    def update_theme_colors(self, **kwargs):
+        """به روزرسانی رنگ‌های اصلی (primary, secondary, etc.)"""
+        self.m3theme.update_sources(**kwargs)

@@ -1,4 +1,4 @@
-# ui/container.py
+# uix/container.py
 import importlib.util
 import os
 from pathlib import Path
