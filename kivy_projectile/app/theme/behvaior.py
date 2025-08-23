@@ -1,10 +1,9 @@
 # theme/behavior.py
-from app import BaseApp
 from kivy.event import EventDispatcher
 from kivy.properties import (
     ObjectProperty, StringProperty, NumericProperty, BooleanProperty
 )
-
+from kivymd.app import MDApp
 class M3ThemableBehavior(EventDispatcher):
     """
     Behavior عمومی: توکن‌های رنگی M3 را به ویژگی‌های ویجت اعمال می‌کند.
@@ -29,13 +28,13 @@ class M3ThemableBehavior(EventDispatcher):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # تلاش برای گرفتن theme از اپ
-        if self.m3theme is None:
-            app = BaseApp.get_running_app()
+        if self.theme is None:
+            app = MDApp.get_running_app()
             self.theme = getattr(app, "theme", None)
 
         # bind به تغییرات تم
         if self.theme is not None:
-            self._bind_theme(self.m3theme)
+            self._bind_theme(self.theme)
 
         # هر تغییری در توکن‌ها → اعمال مجدد
         for p in ("bg_token", "fg_token", "outline_token",
@@ -53,7 +52,7 @@ class M3ThemableBehavior(EventDispatcher):
 
     # ---------- انتخاب توکن نهایی بر اساس use_container ----------
     def _maybe_containerize(self, token: str) -> str:
-        if not self.m3_use_container:
+        if not self.use_container:
             return token
         base = token.strip()
         # اگر primary/secondary/tertiary انتخاب شده و container خواستیم:
@@ -73,7 +72,7 @@ class M3ThemableBehavior(EventDispatcher):
 
     # ---------- اعمال تم ----------
     def apply_m3_theme(self, *_):
-        theme = self.m3theme
+        theme = self.theme
         if theme is None:
             return
 
