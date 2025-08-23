@@ -1,6 +1,6 @@
 # uix/label.py
 from kivymd.uix.label import MDLabel
-from app import M3ThemableBehavior
+from kivy_projectile.app import M3ThemableBehavior
 
 class BaseLabel(M3ThemableBehavior, MDLabel):
     def __init__(self, **kwargs):
