@@ -86,22 +86,15 @@ class BaseTheme(EventDispatcher, M3ResolverMixin):
         self._generate_all_palettes()
 
     def _generate_tonal_palette(self, hex_color: str) -> dict:
-        tones = {
-            0: adjust_lightness(hex_color, 0.1),
-            10: adjust_lightness(hex_color, 0.25),
-            20: adjust_lightness(hex_color, 0.35),
-            30: adjust_lightness(hex_color, 0.55),
-            40: adjust_lightness(hex_color, 0.75),
-            50: hex_color,
-            60: adjust_lightness(hex_color, 1.15),
-            70: adjust_lightness(hex_color, 1.3),
-            80: adjust_lightness(hex_color, 1.5),
-            90: adjust_lightness(hex_color, 1.7),
-            95: adjust_lightness(hex_color, 1.85),
-            99: "#FFFFFF",
-            100: "#FFFFFF"
-        }
-        return {str(k): v for k, v in tones.items()}
+        if self.mode.lower() == "dark":
+            factors = [0.1, 0.25, 0.4, 0.55, 0.7, 1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3]
+        else:
+            factors = [0.1, 0.25, 0.35, 0.55, 0.75, 1, 1.15, 1.3, 1.5, 1.7, 1.85, 1.85]
+
+        tones = {k * 10:adjust_lightness(hex_color, f) for k, f in enumerate(factors)}
+        tones[99] = "#FFFFFF"
+        tones[100] = "#FFFFFF"
+        return {str(k):v for k, v in tones.items()}
 
     def _map_roles(self, palette: dict, role: str) -> dict:
         if role == "primary":
