@@ -30,7 +30,7 @@ class M3ThemableBehavior(EventDispatcher):
         # تلاش برای گرفتن theme از اپ
         if self.theme is None:
             app = MDApp.get_running_app()
-            self.theme = getattr(app, "theme", None)
+            self.theme = getattr(app, "m3_theme", None)
 
         # bind به تغییرات تم
         if self.theme is not None:
