@@ -6,7 +6,7 @@ from importlib import import_module
 
 from kivymd.app import MDApp
 from kivymd.uix.widget import MDWidget
-from app import BaseTheme
+from . import BaseTheme
 
 class BaseApp(MDApp):
     """
@@ -31,7 +31,7 @@ class BaseApp(MDApp):
         self.dynamic_config = None
 
         # ---------- Theme ----------
-        self.m3theme = BaseTheme(
+        self.theme = BaseTheme(
             source_primary="#6750A4",
             source_secondary="#625B71",
             source_tertiary="#7D5260",
@@ -114,8 +114,8 @@ class BaseApp(MDApp):
     # متدهای کمکی برای Theme
     def switch_theme_mode(self, mode: str):
         """سوییچ بین light و dark"""
-        self.m3theme.switch_mode(mode)
+        self.theme.switch_mode(mode)
 
     def update_theme_colors(self, **kwargs):
         """به روزرسانی رنگ‌های اصلی (primary, secondary, etc.)"""
-        self.m3theme.update_sources(**kwargs)
+        self.theme.update_sources(**kwargs)
