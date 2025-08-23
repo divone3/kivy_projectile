@@ -37,8 +37,8 @@ class BaseApp(MDApp):
         settings.py را در android/core می‌خواند و BASE_DIR و base_url را ست می‌کند
         """
         # مسیر ریشه پروژه: جایی که main.py است
-        project_root = Path(__file__).resolve().parent.parent.parent  # library/app/ -> Project/
-        core_path = project_root / "android" / "core"
+        project_root = Path(os.getcwd())  # یا مسیر پروژه اصلی
+        core_path = project_root / "core"
 
         if str(core_path) not in sys.path:
             sys.path.insert(0, str(core_path))
