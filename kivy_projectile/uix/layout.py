@@ -19,7 +19,8 @@ class BaseGridLayout(M3ThemableBehavior, MDGridLayout):
         kwargs.setdefault("fg_token", "on_surface")
         super().__init__(**kwargs)
 
-class BaseFloatLayout(M3ThemableBehavior,MDFloatLayout):
+
+class BaseFloatLayout(M3ThemableBehavior, MDFloatLayout):
     def __init__(self, **kwargs):
         kwargs.setdefault("bg_token", "surface")
         kwargs.setdefault("fg_token", "on_surface")
