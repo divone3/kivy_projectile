@@ -4,7 +4,6 @@ from kivy.properties import (
     ObjectProperty, StringProperty, NumericProperty, BooleanProperty
 )
 from kivymd.app import MDApp
-from kivy.clock import Clock
 
 
 class M3ThemableBehavior(EventDispatcher):
@@ -25,45 +24,30 @@ class M3ThemableBehavior(EventDispatcher):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._theme_bound = False
-
-        # زمان‌بندی برای اطمینان از کامل شدن init
-        Clock.schedule_once(self._finish_init, 0)
-
-    def _finish_init(self, dt):
-        """اتصال events بعد از کامل شدن init"""
-        # bind به تغییرات properties
-        for prop in ["bg_token", "fg_token", "outline_token", "elevation",
-                     "use_container", "target_bg_prop", "target_fg_prop",
-                     "target_outline_prop", "theme"]:
-            self.fbind(prop, self.apply_m3_theme)
-
-        # اگر theme تنظیم نشده، از app بگیر
+        # تلاش برای گرفتن theme از اپ
         if self.theme is None:
             app = MDApp.get_running_app()
-            if app and hasattr(app, 'm3_theme'):
+            if hasattr(app, 'm3_theme'):
                 self.theme = app.m3_theme
 
-        # bind به theme اگر وجود دارد
+        # bind به تغییرات تم
         if self.theme is not None:
             self._bind_theme(self.theme)
+
+        # bind به تغییرات properties
+        for prop in ["bg_token", "fg_token", "outline_token", "elevation",
+                     "use_container", "target_bg_prop", "target_fg_prop", "target_outline_prop"]:
+            self.fbind(prop, self.apply_m3_theme)
 
         # اعمال اولیه تم
         self.apply_m3_theme()
 
-    def on_theme(self, instance, value):
-        """هنگامی که theme تغییر کرد"""
-        if value and not self._theme_bound:
-            self._bind_theme(value)
-
     def _bind_theme(self, theme):
         """اتصال به تغییرات تم"""
-        if self._theme_bound:
-            return
-
-        # فقط به تغییر mode bind می‌شویم چون بقیه تغییرات با تغییر mode اتفاق می‌افتند
         theme.bind(mode = self.apply_m3_theme)
-        self._theme_bound = True
+        for role in ["primary", "secondary", "tertiary", "error", "surface", "outline"]:
+            if hasattr(theme, role):
+                getattr(theme, role).bind(self.apply_m3_theme)
 
     def _maybe_containerize(self, token: str) -> str:
         """تبدیل توکن به container version در صورت نیاز"""
@@ -85,15 +69,7 @@ class M3ThemableBehavior(EventDispatcher):
 
     def apply_m3_theme(self, *args):
         """اعمال تم M3 بر روی ویجت"""
-        # اگر theme تنظیم نشده، سعی کن از app بگیر
-        theme = self.theme
-        if theme is None:
-            app = MDApp.get_running_app()
-            if app and hasattr(app, 'm3_theme'):
-                theme = app.m3_theme
-                self.theme = theme
-
-        if theme is None:
+        if self.theme is None:
             return
 
         try:
@@ -102,9 +78,9 @@ class M3ThemableBehavior(EventDispatcher):
             final_fg_token = self._maybe_containerize(self.fg_token)
 
             # دریافت رنگ‌ها
-            bg_color = theme.get_rgba(final_bg_token)
-            fg_color = theme.get_rgba(final_fg_token)
-            outline_color = theme.get_rgba(self.outline_token)
+            bg_color = self.theme.get_rgba(final_bg_token)
+            fg_color = self.theme.get_rgba(final_fg_token)
+            outline_color = self.theme.get_rgba(self.outline_token)
 
             # اعمال بر روی ویجت
             if hasattr(self, self.target_bg_prop):
