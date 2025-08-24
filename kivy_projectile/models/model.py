@@ -13,6 +13,7 @@ class BaseModel(EventDispatcher):
             if isinstance(attr_value, ModelField):
                 self._fields[attr_name] = attr_value
                 # ثبت رویداد تغییر فیلد
+                setattr(self,f'on_{attr_name}_change', self._on_fields_change)
                 self.register_event_type(f'on_{attr_name}_change')
 
                 # مقدار اولیه از kwargs یا مقدار پیش‌فرض فیلد
@@ -35,3 +36,6 @@ class BaseModel(EventDispatcher):
     def __repr__(self):
         field_values = ", ".join(f"{name}={getattr(self, name)!r}" for name in self._fields)
         return f"<{self.__class__.__name__} {field_values}>"
+
+    def _on_fields_change(self,*args):
+        pass

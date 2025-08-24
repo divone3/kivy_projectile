@@ -165,3 +165,4 @@ class ManyToManyField(RelationField):
 
         if old_value != value:
             instance.dispatch(f'on_{self.name}_change', value)
+
