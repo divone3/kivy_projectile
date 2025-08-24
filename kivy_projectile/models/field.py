@@ -43,28 +43,28 @@ class ModelField(properties.Property):
 class IntegerField(ModelField):
     def validate(self, value):
         value = super().validate(value)
-        if not isinstance(value, int):
+        if value is not None and not isinstance(value, int):
             raise TypeError(f"{self.name} must be int")
         return value
 
 class StringField(ModelField):
     def validate(self, value):
         value = super().validate(value)
-        if not isinstance(value, str):
+        if value is not None and not isinstance(value, str):
             raise TypeError(f"{self.name} must be str")
         return value
 
 class BooleanField(ModelField):
     def validate(self, value):
         value = super().validate(value)
-        if not isinstance(value, bool):
+        if value is not None and not isinstance(value, bool):
             raise TypeError(f"{self.name} must be bool")
         return value
 
 class FloatField(ModelField):
     def validate(self, value):
         value = super().validate(value)
-        if not isinstance(value, (float, int)):
+        if value is not None and not isinstance(value, (float, int)):
             raise TypeError(f"{self.name} must be float")
         return float(value)
 
@@ -114,7 +114,7 @@ class OneToManyField(RelationField):
 
     def validate(self, value):
         value = super().validate(value)
-        if not isinstance(value, list):
+        if value is not None and not isinstance(value, list):
             raise TypeError(f"{self.name} must be a list")
         for item in value:
             if not isinstance(item, EventDispatcher):
@@ -144,7 +144,7 @@ class ManyToManyField(RelationField):
 
     def validate(self, value):
         value = super().validate(value)
-        if not isinstance(value, (set, list)):
+        if value is not None and not isinstance(value, (set, list)):
             raise TypeError(f"{self.name} must be a set or list")
         for item in value:
             if not isinstance(item, EventDispatcher):
@@ -165,4 +165,3 @@ class ManyToManyField(RelationField):
 
         if old_value != value:
             instance.dispatch(f'on_{self.name}_change', value)
-
