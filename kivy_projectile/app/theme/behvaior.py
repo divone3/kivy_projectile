@@ -4,135 +4,93 @@ from kivy.properties import (
     ObjectProperty, StringProperty, NumericProperty, BooleanProperty
 )
 from kivymd.app import MDApp
+
+
 class M3ThemableBehavior(EventDispatcher):
     """
     Behavior عمومی: توکن‌های رنگی M3 را به ویژگی‌های ویجت اعمال می‌کند.
-    - bg_token     : توکن پس‌زمینه (e.g. 'surface', 'primary', 'primary_container')
-    - fg_token     : توکن متن/آیکن (e.g. 'on_surface', 'on_primary')
-    - outline_token: توکن خط/بوردر (e.g. 'outline', 'outline_variant')
-    - elevation    : صرفاً برای سازگاری آینده (surface blending)، فعلاً تزئینی
-    - use_container: اگر True و توکن خانواده‌ی primary/secondary/tertiary بود، از containerها استفاده کن
     """
-    theme = ObjectProperty(None, rebind=True)  # اشاره به BaseTheme توسعه‌یافته
+    theme = ObjectProperty(None, rebind = True)
     bg_token = StringProperty("surface")
     fg_token = StringProperty("on_surface")
     outline_token = StringProperty("outline")
     elevation = NumericProperty(0)
     use_container = BooleanProperty(False)
 
-    # اگر ویجت بخواهد از نام‌های property سفارشی استفاده کند:
+    # نام‌های property سفارشی برای ویجت‌های مختلف
     target_bg_prop = StringProperty("md_bg_color")
     target_fg_prop = StringProperty("text_color")
-    target_outline_prop = StringProperty("line_color")  # برای TextFields/Buttons/Dividers
+    target_outline_prop = StringProperty("line_color")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # تلاش برای گرفتن theme از اپ
         if self.theme is None:
             app = MDApp.get_running_app()
-            self.theme = getattr(app, "m3_theme", None)
+            if hasattr(app, 'm3_theme'):
+                self.theme = app.m3_theme
 
         # bind به تغییرات تم
         if self.theme is not None:
             self._bind_theme(self.theme)
 
-        # هر تغییری در توکن‌ها → اعمال مجدد
-        for p in ("bg_token", "fg_token", "outline_token",
-                  "elevation", "use_container",
-                  "target_bg_prop", "target_fg_prop", "target_outline_prop"):
-            self.fbind(p, lambda *_: self.apply_m3_theme())
+        # bind به تغییرات properties
+        for prop in ["bg_token", "fg_token", "outline_token", "elevation",
+                     "use_container", "target_bg_prop", "target_fg_prop", "target_outline_prop"]:
+            self.fbind(prop, self.apply_m3_theme)
 
-    # ---------- اتصال به تغییرات تم ----------
+        # اعمال اولیه تم
+        self.apply_m3_theme()
+
     def _bind_theme(self, theme):
-        # وقتی user مَد عوض می‌کند یا منبع رنگ‌ها تغییر می‌کند، DictPropertyهای نقش‌ها عوض می‌شوند
-        for name in ("primary", "secondary", "tertiary", "error", "surface", "outline", "mode"):
-            theme.fbind(name, lambda *_: self.apply_m3_theme())
-        # برای سازگاری با تغییر مراجع theme
-        self.fbind("theme", lambda *_: self.apply_m3_theme())
+        """اتصال به تغییرات تم"""
+        theme.bind(mode = self.apply_m3_theme)
+        for role in ["primary", "secondary", "tertiary", "error", "surface", "outline"]:
+            if hasattr(theme, role):
+                getattr(theme, role).bind(self.apply_m3_theme)
 
-    # ---------- انتخاب توکن نهایی بر اساس use_container ----------
     def _maybe_containerize(self, token: str) -> str:
+        """تبدیل توکن به container version در صورت نیاز"""
         if not self.use_container:
             return token
-        base = token.strip()
-        # اگر primary/secondary/tertiary انتخاب شده و container خواستیم:
+
         mapping = {
-            "primary": ("primary_container", "on_primary_container"),
-            "secondary": ("secondary_container", "on_secondary_container"),
-            "tertiary": ("tertiary_container", "on_tertiary_container"),
+            "primary":"primary_container",
+            "secondary":"secondary_container",
+            "tertiary":"tertiary_container",
+            "error":"error_container",
+            "on_primary":"on_primary_container",
+            "on_secondary":"on_secondary_container",
+            "on_tertiary":"on_tertiary_container",
+            "on_error":"on_error_container"
         }
-        if base in mapping:
-            # پس‌زمینه container، متن on_container
-            return mapping[base][0]
-        if base.startswith("on_"):
-            base2 = base.replace("on_", "")
-            if base2 in mapping:
-                return mapping[base2][1]
-        return token
 
-    # ---------- اعمال تم ----------
-    def apply_m3_theme(self, *_):
-        theme = self.theme
-        if theme is None:
+        return mapping.get(token, token)
+
+    def apply_m3_theme(self, *args):
+        """اعمال تم M3 بر روی ویجت"""
+        if self.theme is None:
             return
-
-        # محاسبه‌ی توکن‌های نهایی
-        bg_token = self._maybe_containerize(self.bg_token)
-        fg_token = self._maybe_containerize(self.fg_token)
-        ol_token = self.outline_token
 
         try:
-            bg = theme.get_rgba(bg_token)
-            fg = theme.get_rgba(fg_token)
-            ol = theme.get_rgba(ol_token)
-        except Exception:
-            # اگر توکن اشتباه بود، سایلنت: توسعه‌دهنده در لاگ خودش هندل کند
-            return
+            # محاسبه توکن‌های نهایی
+            final_bg_token = self._maybe_containerize(self.bg_token)
+            final_fg_token = self._maybe_containerize(self.fg_token)
 
-        # تلاش برای ست کردن روی ویژگی‌های رایج ویجت‌ها
-        # 1) پس زمینه
-        if hasattr(self, self.target_bg_prop):
-            try:
-                setattr(self, self.target_bg_prop, bg)
-            except Exception:
-                pass
-        # سازگاری با ویجت‌هایی که از background_color استفاده می‌کنند
-        elif hasattr(self, "background_color"):
-            try:
-                self.background_color = bg
-            except Exception:
-                pass
+            # دریافت رنگ‌ها
+            bg_color = self.theme.get_rgba(final_bg_token)
+            fg_color = self.theme.get_rgba(final_fg_token)
+            outline_color = self.theme.get_rgba(self.outline_token)
 
-        # 2) متن/آیکن
-        if hasattr(self, self.target_fg_prop):
-            try:
-                setattr(self, self.target_fg_prop, fg)
-            except Exception:
-                pass
-        # سازگاری با MDIcon/MDLabel خاص
-        elif hasattr(self, "text_color"):
-            try:
-                self.text_color = fg
-            except Exception:
-                pass
-        elif hasattr(self, "icon_color"):
-            try:
-                self.icon_color = fg
-            except Exception:
-                pass
+            # اعمال بر روی ویجت
+            if hasattr(self, self.target_bg_prop):
+                setattr(self, self.target_bg_prop, bg_color)
 
-        # 3) outline/border/line
-        if hasattr(self, self.target_outline_prop):
-            try:
-                setattr(self, self.target_outline_prop, ol)
-            except Exception:
-                pass
-        elif hasattr(self, "line_color_normal"):
-            try:
-                self.line_color_normal = ol
-            except Exception:
-                pass
+            if hasattr(self, self.target_fg_prop):
+                setattr(self, self.target_fg_prop, fg_color)
 
-        # 4) surface elevation blending (آینده)
-        # اینجا می‌تونی براساس m3_elevation، blend انجام بدی و bg رو کمی با primary/neutral میکس کنی.
-        # فعلاً نگه می‌داریم تا بعداً اضافه کنیم.
+            if hasattr(self, self.target_outline_prop):
+                setattr(self, self.target_outline_prop, outline_color)
+
+        except Exception as e:
+            print(f"Error applying M3 theme: {e}")

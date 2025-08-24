@@ -4,12 +4,13 @@ from kivy_projectile.app import M3ThemableBehavior
 
 
 class BaseRaisedButton(M3ThemableBehavior, MDRaisedButton):
+    """دکمه M3 با استایل صحیح"""
+
     def __init__(self, **kwargs):
-        # اگر کاربر توکن داده باشد نگه می‌داریم، در غیر این صورت مقدار پیش‌فرض
-        bg_token = kwargs.pop("bg_token", "primary")
-        fg_token = kwargs.pop("fg_token", "on_primary")
-        super().__init__(bg_token=bg_token, fg_token=fg_token, **kwargs)
-        self.apply_m3_theme()  # اعمال تم به محض ساخت دکمه
+        super().__init__(**kwargs)
+        self.target_bg_prop = "md_bg_color"
+        self.target_fg_prop = "text_color"
+
 
 class BaseFlatButton(M3ThemableBehavior, MDRectangleFlatButton):
     def __init__(self, **kwargs):
