@@ -1,133 +1,66 @@
 # theme/behavior.py
 from kivy.event import EventDispatcher
-from kivy.properties import (
-    ObjectProperty, StringProperty, NumericProperty, BooleanProperty
-)
+from kivy.properties import ObjectProperty, StringProperty, NumericProperty, ListProperty
 from kivymd.app import MDApp
+from .theme import BaseTheme
 
 
 class M3ThemableBehavior(EventDispatcher):
     """
-    Behavior عمومی: توکن‌های رنگی M3 را به ویژگی‌های ویجت اعمال می‌کند.
+    Behavior عمومی برای ویجت‌های M3
     """
-    theme = ObjectProperty(None, rebind = True)
+    theme: BaseTheme = ObjectProperty(None, rebind = True)
+
     bg_token = StringProperty("surface")
     fg_token = StringProperty("on_surface")
     outline_token = StringProperty("outline")
+    optional_token = StringProperty("primary")
     elevation = NumericProperty(0)
-    use_container = BooleanProperty(False)
 
-    # نام‌های property سفارشی برای ویجت‌های مختلف
-    target_bg_prop = StringProperty("md_bg_color")
-    target_fg_prop = StringProperty("text_color")
-    target_outline_prop = StringProperty("line_color")
-
+    # نام پراپرتی مقصد در ویجت
+    target_bg_prop = ListProperty([])
+    target_fg_prop = ListProperty([])
+    target_outline_prop = ListProperty([])
+    target_optional_prop = ListProperty([])
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._theme_bound = False
-        self._finish_init()
+        self._bind_theme()
+        self.apply_theme()
 
-    def _finish_init(self):
-        """اتصال events بعد از کامل شدن init"""
-        # bind به تغییرات properties
-        for prop in ["bg_token", "fg_token", "outline_token", "elevation",
-                     "use_container", "target_bg_prop", "target_fg_prop",
-                     "target_outline_prop", "theme"]:
-            self.fbind(prop, self.apply_m3_theme)
-
-        # اگر theme تنظیم نشده، از app بگیر
+    def _bind_theme(self):
         if self.theme is None:
             app = MDApp.get_running_app()
-            if app and hasattr(app, 'm3_theme'):
+            if app and hasattr(app, "m3_theme"):
                 self.theme = app.m3_theme
+        if self.theme:
+            self.theme.bind(tokens = lambda *a:self.apply_theme())
 
-        # bind به theme اگر وجود دارد
-        if self.theme is not None:
-            self._bind_theme(self.theme)
-
-        # اعمال اولیه تم
-        self.apply_m3_theme()
-
-    def on_theme(self, instance, value):
-        """هنگامی که theme تغییر کرد"""
-        if value and not self._theme_bound:
-            self._bind_theme(value)
-        self.apply_m3_theme()
-
-    def _bind_theme(self, theme):
-        """اتصال به تغییرات تم"""
-        if self._theme_bound:
-            return
-
-        # فقط به تغییر mode bind می‌شویم چون بقیه تغییرات با تغییر mode اتفاق می‌افتند
-        theme.bind(mode = self.apply_m3_theme)
-        self._theme_bound = True
-
-    def _maybe_containerize(self, token: str) -> str:
-        """تبدیل توکن به container version در صورت نیاز"""
-        if not self.use_container:
-            return token
-
-        mapping = {
-            "primary":"primary_container",
-            "secondary":"secondary_container",
-            "tertiary":"tertiary_container",
-            "error":"error_container",
-            "on_primary":"on_primary_container",
-            "on_secondary":"on_secondary_container",
-            "on_tertiary":"on_tertiary_container",
-            "on_error":"on_error_container"
-        }
-
-        return mapping.get(token, token)
-
-    # theme/behavior.py
-    def apply_m3_theme(self, *args):
-        """اعمال تم M3 بر روی ویجت"""
-        # اگر theme تنظیم نشده، سعی کن از app بگیر
-        theme = self.theme
-        if theme is None:
-            app = MDApp.get_running_app()
-            if app and hasattr(app, 'm3_theme'):
-                theme = app.m3_theme
-                self.theme = theme
-
-        if theme is None:
+    def apply_theme(self, *args):
+        if not self.theme:
             return
 
         try:
-            # محاسبه توکن‌های نهایی
-            final_bg_token = self._maybe_containerize(self.bg_token)
-            final_fg_token = self._maybe_containerize(self.fg_token)
+            bg = self.theme.get_rgba(self.bg_token)
+            fg = self.theme.get_rgba(self.fg_token)
+            outline = self.theme.get_rgba(self.outline_token)
+            optional = self.theme.get_rgba(self.optional_token)
+            if self.target_bg_prop:
+                for target in self.target_bg_prop:
+                    if hasattr(self, target):
+                        setattr(self, target, bg)
 
-            # دریافت رنگ‌ها - پشتیبانی از transparent
-            if final_bg_token == "transparent":
-                bg_color = [0, 0, 0, 0]  # رنگ کاملاً شفاف
-            else:
-                bg_color = theme.get_rgba(final_bg_token)
+            if self.target_fg_prop:
+                for target in self.target_fg_prop:
+                    if hasattr(self, target):
+                        setattr(self, target, fg)
 
-            if final_fg_token == "transparent":
-                fg_color = [0, 0, 0, 0]  # رنگ کاملاً شفاف
-            else:
-                fg_color = theme.get_rgba(final_fg_token)
-
-            outline_color = theme.get_rgba(self.outline_token)
-
-            # اعمال بر روی ویجت
-            if hasattr(self, self.target_bg_prop):
-                setattr(self, self.target_bg_prop, bg_color)
-
-            if hasattr(self, self.target_fg_prop):
-                setattr(self, self.target_fg_prop, fg_color)
-
-            if hasattr(self, self.target_outline_prop):
-                setattr(self, self.target_outline_prop, outline_color)
-
-            # برای اطمینان، borderها را غیرفعال کنید
-            if hasattr(self, 'border'):
-                self.border = (0, 0, 0, 0)
-            if hasattr(self, 'line_color'):
-                self.line_color = (0, 0, 0, 0)
-
+            if self.target_outline_prop:
+                for target in  self.target_outline_prop:
+                    if hasattr(self, target):
+                        setattr(self, target, outline)
+            if self.target_optional_prop:
+                for target in self.target_optional_prop:
+                    if hasattr(self, target):
+                        setattr(self, target, optional)
         except Exception as e:
-            print(f"Error applying M3 theme: {e}")
+            print("Error applying theme:", e)

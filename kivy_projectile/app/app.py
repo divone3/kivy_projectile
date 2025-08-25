@@ -16,7 +16,7 @@ class BaseApp(MDApp):
     - سپس کانتینر اصلی UI را بارگذاری می‌کند
     - در صورت عدم موفقیت، fallback یک MDWidget خالی نمایش داده می‌شود
     """
-
+    android_folder_name = "android"
     container_class_name = "AppContainer"  # نام کلاس کانتینر داخل container.py
     container_module_name = "container"  # نام فایل کانتینر
     ui_folder_name = "ui"  # مسیر پوشه ui
@@ -38,7 +38,7 @@ class BaseApp(MDApp):
         """
         # مسیر ریشه پروژه: جایی که main.py است
         project_root = Path(os.getcwd())  # یا مسیر پروژه اصلی
-        core_path = project_root / "core"
+        core_path = project_root / self.android_folder_name / self.core_folder_name
 
         if str(core_path) not in sys.path:
             sys.path.insert(0, str(core_path))
